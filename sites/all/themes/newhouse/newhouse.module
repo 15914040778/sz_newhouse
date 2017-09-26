@@ -1,0 +1,45 @@
+name		=		New House
+description =		新房
+screenshot	=		screenshot.png
+core		=		7.x
+
+;base theme  = 		seven
+
+; CSS 样式表
+;stylesheets[all][] = bootstrap/css/bootstrap.css
+
+
+; JavaScript 脚本文件
+;scripts[all][] = bootstrap/js/bootstrap.min.js
+
+
+; 默认的区域
+;regions[header] = Header
+;regions[highlighted] = Highlighted
+;regions[help] = Help
+;regions[content] = Content
+;regions[sidebar_first] = Left sidebar
+;regions[sidebar_second] = Right sidebar
+regions[footer] = Footer
+
+;regions[header] = Header
+;regions[new_house_content_page_basic_data] = New House Content Page Basic Data
+;regions[footer] = Footer
+
+
+
+
+
+; 默认的 Feature
+;features[] = logo
+;features[] = name
+;features[] = slogan
+;features[] = node_user_picture
+;features[] = comment_user_picture
+;features[] = comment_user_verification
+;features[] = favicon
+;features[] = main_menu
+;features[] = secondary_menu
+
+
+
