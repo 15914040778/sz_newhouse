@@ -1,0 +1,324 @@
+<?php
+
+
+function map_field_info(){
+	return array(
+		"map_field"	=>	array(
+			//表示这个字段的名称
+			"label"	=>	"地图",
+			//表示这个字段的描述
+			"description"	=>	t('map field'),
+			//表示这个字段实例的配置 ， 这里给出的是默认配置 ，在创建好的改字段后
+			//可以修改这一配置 ， 这个配置中的键是随意的 ， 取决于你的实际需要。这个里我们包含了三个键
+			"instance_settings"	=>	array(
+				//size是默认的textfield的大小
+				'key'	=>	'ykg2sgMNi9pE5go8DVzngqhk9rfExQ9E',
+			),
+			//默认的字段输入控件 这里为new_fiel.
+			'default_widget'	=>	'map_field',
+			//默认的字段显示格式器 这里为new_default
+			'default_formatter'	=>	'map_default'
+
+		),
+	);
+}
+
+
+
+
+/**
+ * Implements hook_field_widget_info().
+ */
+function map_field_widget_info(){
+	return array(
+		"map_field"	=>	array(
+			"label"	=>	t("map_field"),
+			'field types'	=>	array("map_field"),
+			"multiple values"	=>	FIELD_BEHAVIOR_DEFAULT,
+		),
+	);
+}
+
+// 现在，该向字段里面输入信息了，此时，我们点击创建节点链接，来创建一个该类型下面的一个节点，此时在添加节点的表单中，并没有我们这个字段对应的表单元素。现在就让我们定义具体的输入控件，向module文件里面添加以下代码：
+
+
+/**
+ * Implements hook_field_widget_form().
+ */
+function map_field_widget_form(&$form, &$form_state, $field, $instance, $langcode, $items, $delta, $element) {
+  // print_r($field);
+  // //var point = new BMap.Point(116.404, 39.915);
+  $field_name = $field["field_name"];
+  // if()
+ 
+  print_r($items);
+  if(isset($items[0]["value"])){
+	  $value = $items[0]["value"];
+  }
+
+  
+  if(isset($value)){
+	$value_arr = explode("," , $value);
+  	$lng = $value_arr["0"];
+  	$lat = $value_arr["1"];
+  }else{
+  	$lng = "116.404";
+  	$lat = "39.915";
+  }
+  echo $lng."---".$lat;
+  $element += array(
+    '#type' => $instance['widget']['type'],
+    '#default_value' => isset($items[$delta]) ? $items[$delta] : '',
+    '#prefix' => '<style>
+          #allmap{
+            display:none;
+            width:1200px !important;
+            height:600px !important;
+            z-index:1001 !important;
+            position: fixed !important;
+            left: 20%;
+            top: 30%;
+          }
+          #r-result{
+            width:100%;
+          }
+          .ceng{
+          	display:none;
+          	width: 100%;
+		    position: fixed;
+		    top: 0;
+		    left: 0;
+		    bottom: 0;
+		    right: 0;
+		    background-color: rgba(0 , 0 , 0 , 0.5);
+		    z-index: 100;
+
+          }
+        </style><div class="ceng"></div>',
+        '#suffix' => '<div id="click_'.$field["field_name"].'">点击获取坐标</div>
+        <div id="allmap"></div><div id="r-result"></div>
+        <script type="text/javascript" src="http://api.map.baidu.com/api?v=2.0&ak='.$instance["settings"]["key"].'"></script>
+        <script src="http://libs.baidu.com/jquery/2.1.1/jquery.min.js"></script>
+        <script>
+        (function($){
+          $(function(){
+            var map = new BMap.Map("allmap");  
+            var point = new BMap.Point('.$lng.', '.$lat.');
+			      map.centerAndZoom(point, 14); 
+            //设置中心点
+      			theLocation("'.$lng.'" , "'.$lat.'");
+      			        
+
+            //添加控制杠
+            
+      			var top_left_navigation = new BMap.NavigationControl();  //左上角，添加默认缩放平移控件
+      			var top_right_navigation = new BMap.NavigationControl({anchor: BMAP_ANCHOR_TOP_RIGHT, type: BMAP_NAVIGATION_CONTROL_SMALL}); //右上角，仅包含平移和缩放按钮
+                   
+      			map.addControl(top_right_navigation);     
+
+
+      			
+      			//单击获取点击的经纬度
+              map.addEventListener("click",function(e){
+        				console.log(e.point.lng + "," + e.point.lat);
+        				theLocation(e.point.lng , e.point.lat);
+              });
+              // 用经纬度设置地图中心点
+              function theLocation($lng , $lat){
+                console.log("OJK");
+                  map.clearOverlays(); 
+                  var new_point = new BMap.Point($lng,$lat);
+                  var marker = new BMap.Marker(new_point);  // 创建标注
+                  map.addOverlay(marker);              // 将标注添加到地图中
+                  //保存坐标
+                  $zuobiao = $lng+","+$lat;
+                  map.setCenter(new_point);
+                  $("input[name=\''.$field["field_name"].'[und][0][value]\']").val($zuobiao);
+                  
+              }
+              $("#click_'.$field["field_name"].'").click(function(){
+                $(".ceng").show();
+                $("#allmap").show();
+              })
+              $(".ceng").click(function(){
+                $(this).hide();
+                $("#allmap").hide();
+              })
+          })
+        })(jQuery)
+        </script>
+        '
+  );
+  return $element;
+}
+
+
+
+ // 这段代码看起来有点简单，加进来以后，并没有得到我们想要的效果，是的。我们还需要实现更多一点的钩子。在Drupal的表单元素中，部分表单元素是由其它表单元素复合而成的，比如date、file,以及一些第三方的表单元素。其实我们可以把我们的这个输入控件，定义成为一个表单元素类型，这样更有利于复用。我们来看看这个表单元素类型的定义：
+
+
+/**
+ * Implements hook_element_info().
+ */
+function map_element_info() {
+  $elements = array();
+  $elements['map_field'] =  array(
+    '#input' => TRUE,
+    '#process' => array('map_field_process'),
+    '#theme' => 'map_field',
+    '#theme_wrappers' => array('form_element'),
+  );
+  return $elements;
+}
+ 
+/**
+ * Process the transliteration_title type element before displaying the field.
+ *
+ * Build the form element. When creating a form using FAPI #process,
+ * note that $element['#value'] is already set.
+ *
+ * The $fields array is in $complete_form['#field_info'][$element['#field_name']].
+ */
+function map_field_process($element, $form_state, $complete_form) {
+  $settings = &$form_state['field'][$element['#field_name']][$element['#language']]['instance']['settings'];
+  $element['value'] = array(
+    '#type' => 'textfield',
+    '#maxlength' => 255,
+    '#title' => t('map'),
+    '#required' => isset($element['#required']) ? $element['#required'] : FALSE,
+    '#default_value' => isset($element['#value']['value']) ? $element['#value']['value'] : NULL,
+  );
+  return $element;
+}
+
+
+
+
+
+
+
+
+
+/**
+ * Implements hook_theme().
+ */
+function map_theme() {
+  return array(
+    'map_field' => array(
+      'render element' => 'element',
+    ),
+  );
+}
+ 
+/**
+ * FAPI theme for an individual text elements.
+ */
+function theme_map_field($vars) {
+  
+ 
+  $element = $vars['element'];
+ 
+  $output = '';
+  $output .= '<div class="map-field clearfix">';
+  $output .= '<div class="map-field-value">'. drupal_render($element['value']) .'</div>';
+  $output .= '</div>';
+  return $output;
+}
+
+
+
+/**
+ * Implements hook_content_is_empty().
+ */
+//首先我们来判断一下，这个字段什么时候为空
+function map_field_is_empty($item, $field) {
+  if (empty($item['value'])) {
+    return TRUE;
+  }
+  return FALSE;
+}
+
+
+
+/**
+ * Implements hook_field_validate().
+ *
+ * Possible error codes:
+ * - 'transliteration_title_invalid': The transliteration title is not valid
+ * 验证数据格式
+ */
+function map_field_validate($obj_type, $object, $field, $instance, $langcode, $items, &$errors) {
+
+  foreach ($items as $delta => $item) {
+//drupal_set_message($item['value']);
+//[\x20-\x7e]   [A-Za-z0-9]
+    if (!preg_match('/^[0-9|\.|,]+$/', $item['value'])) {
+      $message = t('"%value" 格式错误', array('%value' => $item['value']));
+  /*
+  //这段代码不能正常工作
+      $errors[$field['field_name']][$langcode][$delta][] = array(
+        'error' => "transliteration_title_invalid_".$field['field_name'],
+        'message' => t('It is not a valid transliteration titles'),
+      );
+  */
+
+  form_set_error($field['field_name'] .']['.$langcode.']['. $delta .'][value', $message);
+    }
+  }
+
+}    
+
+
+// 我们完成了字段的验证以后，还有一项工作要做，那就是在将字段的值，保存到数据库之前，重新设置一下，在不是手动输入的情况下，将其设置为源字段经过transliteration模块转换后的值。为此，我们还需要实现一个钩子函数，在module文件中添加以下代码：
+
+
+/**
+ * Implements hook_field_presave().
+ */
+function map_field_presave($entity_type, $entity, $field, $instance, $langcode, &$items) {
+
+}
+
+
+
+/**
+ * Implements hook_field_formatter_info().
+ *
+ */
+function map_field_formatter_info() {
+  $formats = array(
+    'map_default' => array(
+      'label' => t('Default'),
+      'description' => t('Default display for the transliteration title.'),
+      'field types' => array('transliteration_title_field'),
+    ),
+    'map_plain' => array(
+      'label' => t('Plain text'),
+      'description' => t('Display the transliteration title as plain text.'),
+      'field types' => array('transliteration_title_field'),
+    ),
+  );
+  return $formats;
+}
+ 
+/**
+ * Implements hook_field_formatter_view().
+ */
+function map_field_formatter_view($object_type, $object, $field, $instance, $langcode, $items, $display) {
+  $element = array();
+  switch ($display['type']) {
+    case 'map_default':
+      foreach ($items as $delta => $item) {
+  //drupal_set_message(print_r($item));
+        $element[$delta] = array('#markup' => $item['value']);
+      }
+      break;
+ 
+    case 'map_plain':
+      foreach ($items as $delta => $item) {
+        $element[$delta] = array('#markup' => check_plain($item['value']));
+      }
+      break;
+  }
+  return $element;
+}

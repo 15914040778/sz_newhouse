@@ -1,0 +1,52 @@
+<?php
+
+//给数据库添加一个保存字段值的字段
+
+function region_map_field_schema($field) {
+  return array(
+  	//字段
+    'columns' => array(
+      //KEY
+      'value' => array(
+        //字段类型
+        'type' => 'varchar',
+        //最长长度
+        'length' => 255,
+        //是否可为空
+        'not null' => FALSE,
+        //
+        'sortable' => TRUE,
+      ),
+    ),
+  );
+}
+
+
+//添加设置选项 并添加到数据库中
+
+
+function region_map_field_widget_settings_form($field, $instance) {
+	$widget = $instance['widget'];
+	$settings = $widget['settings'];
+
+	$form['key'] = array(
+	    '#type' => 'textfield',
+	    '#title' => t('Baidu map KEY'),
+	    '#default_value' => isset($settings['key'])?$settings['key']:'ykg2sgMNi9pE5go8DVzngqhk9rfExQ9E',
+	    '#required' => TRUE,
+	    // '#element_validate' => array('_element_validate_integer_positive'),
+	  );
+
+  return $form;
+}
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,4 @@
+name = 提供指定分类的数据
+description = 提供指定分类的数据
+core = 7.x
+files[] = trems.module

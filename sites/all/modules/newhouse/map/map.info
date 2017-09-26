@@ -1,0 +1,22 @@
+
+
+
+;名称
+name = baidu map Field
+;描述
+description = 百度地图
+;适用与Drupal的版本
+core = 7.x
+;依赖
+;dependencies[] = transliteration
+
+;注意，我们这里使用了依赖关系，表示这个模块依赖于transliteration模块。如果没有安装于transliteration模块，并且这个模块现在还不存在于我们的站点目录下，那么我们就无法启用我们的这个自定义模块。
+
+
+
+
+
+
+
+
+

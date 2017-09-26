@@ -1,0 +1,31 @@
+<?php
+function trems_menu(){
+	$items["get/trems"] = array(
+		"page callback"	=>	"trems_func",
+		"page arguments"	=>	array(2),
+		"access callback"	=>	TRUE
+	);
+	return $items;
+}
+
+
+function trems_func($name){
+	$trems = connect_country_fetch_countries($name);
+
+	//初始化一个数组
+
+	$init_arr = array();
+	foreach($trems as $key=>$value){
+	  $trem = taxonomy_term_load($value);
+	  $zuobiao_arr = explode("," , $trem->field_zuobiao["und"]["0"]["value"]);
+	  $init_arr[$key]["lng"] = $zuobiao_arr[0];
+	  $init_arr[$key]["lat"] = $zuobiao_arr[1];
+	  $init_arr[$key]["name"] = $trem->name;
+	}
+	$json_arr = json_encode($init_arr);
+	// return $json_arr;
+	echo $json_arr;
+	exit;
+}
+
+

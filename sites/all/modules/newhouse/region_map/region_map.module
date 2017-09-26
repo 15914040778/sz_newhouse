@@ -1,0 +1,259 @@
+<?php
+
+
+
+/**
+ * Implements hook_field_info().
+ */
+
+//定义字段类型
+function region_map_field_info() {
+  return array(
+    //机读名称
+    'region_map_field' => array(
+      //字段名称
+      'label' => t("region map"),
+      //简介
+      'description' => t('一个可以选择一片区域的地图字段'),
+      //选项
+      'instance_settings' => array(
+        //百度地图的KEY
+        'key' =>  'ykg2sgMNi9pE5go8DVzngqhk9rfExQ9E',
+      ),
+      //默认控件
+      'default_widget' => 'region_map_field',
+      //默认字段显示格式器
+      'default_formatter' => 'region_map_default',
+    ),
+  );
+}
+
+
+
+/**
+ * Implements hook_field_widget_info().
+ */
+// 定义了这个字段的输入控件
+function region_map_field_widget_info() {
+  return array(
+    'region_map_field' => array(
+      'label' => t('region map'),
+      'field types' => array('region_map_field'),
+      'multiple values' => FIELD_BEHAVIOR_DEFAULT,
+    ),
+  );
+}
+
+
+
+
+/**
+ * Implements hook_field_widget_form().
+ */
+
+
+// 现在，该向字段里面输入信息了，此时，我们点击创建节点链接，来创建一个该类型下面的一个节点，此时在添加节点的表单中，并没有我们这个字段对应的表单元素。现在就让我们定义具体的输入控件，向module文件里面添加以下代码：
+
+function region_map_field_widget_form(&$form, &$form_state, $field, $instance, $langcode, $items, $delta, $element) {
+  $element += array(
+    '#type' => $instance['widget']['type'],
+    '#default_value' => isset($items[$delta]) ? $items[$delta] : '',
+    '#prefix' =>  '
+
+    <style type="text/css">
+    #allmap_'.$field["field_name"].' {width: 80%; height:500px; overflow: hidden;z-index:1001;display:none;
+      position:fixed !important;
+      top:30%;
+      left:10%;
+      }
+    #result {width:100%;font-size:12px;}
+    dl,dt,dd,ul,li{
+      margin:0;
+      padding:0;
+      list-style:none;
+    }
+    p{font-size:12px;}
+    dt{
+      font-size:14px;
+      font-family:"微软雅黑";
+      font-weight:bold;
+      border-bottom:1px dotted #000;
+      padding:5px 0 5px 5px;
+      margin:5px 0;
+    }
+    dd{
+      padding:5px 0 0 5px;
+    }
+    li{
+      line-height:28px;
+    }
+    .'.$field["field_name"].'_ceng{
+      display:none;
+      width: 100%;
+      position: fixed;
+      top: 0;
+      left: 0;
+      bottom: 0;
+      right: 0;
+      background-color: rgba(0 , 0 , 0 , 0.5);
+      z-index: 100;
+    }
+    </style>
+    <script type="text/javascript" src="http://api.map.baidu.com/api?v=2.0&ak='.$instance["settings"]["key"].'"></script>
+    <!--加载鼠标绘制工具-->
+    <script type="text/javascript" src="http://api.map.baidu.com/library/DrawingManager/1.4/src/DrawingManager_min.js"></script>
+    <link rel="stylesheet" href="http://api.map.baidu.com/library/DrawingManager/1.4/src/DrawingManager_min.css" />
+    <!--加载检索信息窗口-->
+    <script type="text/javascript" src="http://api.map.baidu.com/library/SearchInfoWindow/1.4/src/SearchInfoWindow_min.js"></script>
+    <link rel="stylesheet" href="http://api.map.baidu.com/library/SearchInfoWindow/1.4/src/SearchInfoWindow_min.css" />
+    <div id="allmap_'.$field["field_name"].'" style="overflow:hidden;zoom:1;position:relative;"> 
+      <div id="map_'.$field["field_name"].'" style="height:100%;-webkit-transition: all 0.5s ease-in-out;transition: all 0.5s ease-in-out;"></div>
+    </div>
+    ',
+    '#suffix' =>  '
+    <div class="'.$field["field_name"].'_ceng"></div>
+    <div id="click_'.$field["field_name"].'">点击选取区域</div>
+    <script type="text/javascript">
+      (function($){
+        $(function(){
+          // 百度地图API功能
+          var map = new BMap.Map("map_'.$field["field_name"].'");
+          var poi = new BMap.Point(116.307852,40.057031);
+          map.centerAndZoom(poi, 16);
+          map.enableScrollWheelZoom();  
+          var overlays = [];
+          var overlaycomplete = function(e){
+            overlays.push(e.overlay);
+          };
+
+         
+
+          var styleOptions = {
+              strokeColor:"red",    //边线颜色。
+              fillColor:"red",      //填充颜色。当参数为空时，圆形将没有填充效果。
+              strokeWeight: 3,       //边线的宽度，以像素为单位。
+              strokeOpacity: 0.8,    //边线透明度，取值范围0 - 1。
+              fillOpacity: 0.6,      //填充的透明度，取值范围0 - 1。
+              strokeStyle: "solid" //边线的样式，solid或dashed。
+          }
+        function clearAll() {
+        for(var i = 0; i < overlays.length; i++){
+                map.removeOverlay(overlays[i]);
+              
+            }
+            overlays.length = 0   
+        }
+          
+
+        function loca_map(){
+          map.clearOverlays();
+          //实例化鼠标绘制工具
+          var drawingManager = new BMapLib.DrawingManager(map, {
+              isOpen: true, //是否开启绘制模式
+              enableDrawingTool: false, //是否显示工具栏
+              drawingToolOptions: {
+                  anchor: BMAP_ANCHOR_TOP_RIGHT, //位置
+                  offset: new BMap.Size(5, 5), //偏离值
+              },
+              circleOptions: styleOptions, //圆的样式
+              polylineOptions: styleOptions, //线的样式
+              polygonOptions: styleOptions, //多边形的样式
+              rectangleOptions: styleOptions //矩形的样式
+          });  
+            //设置默认绘制多边形
+            drawingManager.setDrawingMode(BMAP_DRAWING_POLYGON);
+           //添加鼠标绘制工具监听事件，用于获取绘制结果
+              drawingManager.addEventListener("polygoncomplete", function(overlay) {
+              console.log(overlay.po);
+              var zuobiao_arr = new Array();
+              for(var i=0;i<overlay.po.length;i++){
+                console.log(overlay.po[i].lat);
+                zuobiao_arr.push(overlay.po[i].lng+","+overlay.po[i].lat);
+              }
+              var zuobiao_str = zuobiao_arr.join("|");
+              console.log(zuobiao_str);
+              //将获取到的坐标输入到字段中
+              $("input[name=\''.$field["field_name"].'[und][0][value]\']").val(zuobiao_str);
+        });
+        }
+
+
+        $("#click_'.$field["field_name"].'").click(function(){
+          loca_map();
+          $("#allmap_'.$field["field_name"].'").show();
+          $(".'.$field["field_name"].'_ceng").show();
+        })
+        $(".'.$field["field_name"].'_ceng").click(function(){
+          $(".'.$field["field_name"].'_ceng").hide();
+          $("#allmap_'.$field["field_name"].'").hide();
+        })
+        })
+      })(jQuery)
+  </script>
+
+    ',
+  );
+  return $element;
+}
+
+
+
+
+
+
+/**
+ * Implements hook_element_info().
+ */
+function region_map_element_info() {
+  $elements = array();
+  $elements['region_map_field'] =  array(
+    '#input' => TRUE,
+    '#process' => array('region_map_field_process'),
+    '#theme' => 'region_map_field',
+    '#theme_wrappers' => array('form_element'),
+  );
+  return $elements;
+}
+ 
+/**
+ * Process the transliteration_title type element before displaying the field.
+ *
+ * Build the form element. When creating a form using FAPI #process,
+ * note that $element['#value'] is already set.
+ *
+ * The $fields array is in $complete_form['#field_info'][$element['#field_name']].
+ */
+function region_map_field_process($element, $form_state, $complete_form) {
+  $settings = &$form_state['field'][$element['#field_name']][$element['#language']]['instance']['settings'];
+  $element['value'] = array(
+    '#type' => 'textfield',
+    '#maxlength' => 255,
+    '#title' => t('region map'),
+    '#required' => isset($element['#required']) ? $element['#required'] : FALSE,
+    '#default_value' => isset($element['#value']['value']) ? $element['#value']['value'] : NULL,
+  );
+  return $element;
+}
+
+
+
+/**
+ * Implements hook_content_is_empty().
+ */
+//首先我们来判断一下，这个字段什么时候为空
+function region_map_field_is_empty($item, $field) {
+  if (empty($item['value'])) {
+    return TRUE;
+  }
+  return FALSE;
+}
+
+
+
+
+
+
+
+
+
+

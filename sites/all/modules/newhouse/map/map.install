@@ -1,0 +1,58 @@
+<?php
+
+/**
+ * @file
+ * Install file for the new module
+ * 为new字段模块安装文件
+*/
+//添加数据库字段【列】
+function map_field_schema($field){
+	return array(
+		"columns"	=>	array(
+			"value"	=>	array(
+				//自定义长度型文本
+				"type"		=>	"varchar",
+				//文本最大长度 
+				"length"	=>	255,
+				//是否为空
+				"not null"	=>	FALSE,
+				//
+				'sortable'  => 	TRUE,
+			),
+		),
+	);
+}
+
+
+
+
+
+/**
+ * Implements hook_field_widget_settings_form().
+*/
+
+// 在hook_field_widget_settings_form钩子实现里面，返回的是一个普通的表单数组，里面包含配置项对应的表单元素。在这里，我们定义了三个配置项，文本栏的尺寸、源字段ID、大小写情况。添加了上述代码以后，重新刷新字段的编辑页面，我们看到上面显示了我们定义的三个字段
+function map_field_widget_settings_form($field , $instance){
+	$widget   = $instance["widget"];
+	$settings = $widget["settings"];
+	//KEY
+	$form["key"]	=	array(
+		//类型
+		"#type"				=>	"textfield",
+		//标题
+		"#title"			=>	t("Baidu maps KEY"),
+		//默认值
+		"#default_value"	=>	isset($settins["key"])?$settings["key"]:"ykg2sgMNi9pE5go8DVzngqhk9rfExQ9E",
+		//是否必须
+		"#required"			=>	TRUE,
+		// //元素值
+		// "#element_validate"	=>	array(
+		// 							"_element_validate_interget_positive"
+		// 						),
+	);
+
+	
+  	return $form;
+}
+
+
